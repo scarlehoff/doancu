@@ -13,7 +13,8 @@ Will download whatever video is in the url into filename.mp3 and cut the 4 first
 Instead of using a url, you can compile a text file with urls and filenames
 eg:
 
-   http://youtube.blabla Name 1
-   http://youtube.blabla Some other song
+    http://youtube.blabla Name 1
+
+    http://youtube.blabla Some other song
 
 
