@@ -96,42 +96,60 @@ def clean_name(file_name):
     cmd_call(cmd, verbose = False)
     return new_name_mp3
 
+def parse_file(input_file, output, default_begining, default_end):
+    url_lst = []
+    output_lst = []
+    io_lst = [] # initial_offsets
+    fo_lst = [] # final_offsets
+    if "http" in input_file:
+        url_lst = [input_file]
+        output_lst = [output]
+        io_lst = [default_begining]
+        fo_lst = [default_end]
+    else:
+        with open(args.url) as f:
+            for line_raw in f:
+                # First remove comments and skip empty lines
+                line = line_raw.split("#",1)[0]
+                if line.strip() == "":
+                    continue
+                # Are times included in the line? format: url, begining, ending, name
+                comma_format = line.split(",")
+                if len(comma_format) == 4:
+                    url_lst.append(comma_format[0].strip())
+                    io_lst.append(comma_format[1].strip())
+                    fo_lst.append(comma_format[2].strip())
+                    output_lst.append(comma_format[3].strip())
+                else:
+                    l = line.split()
+                    url_lst.append(l[0].strip())
+                    out_name = " ".join(l[1:])
+                    output_lst.append(out_name.strip())
+                    io_lst.append(default_begining)
+                    fo_lst.append(default_end)
+
+    return zip(url_lst, output_lst, io_lst, fo_lst)
+
 
 if __name__ == "__main__":
 
     args = parse_all_args()
 
-    if "http" in args.url:
-        url_lst = [args.url]
-        output_names = [args.output]
-    else:
-        url_lst = []
-        output_names = []
-        with open(args.url) as f:
-            for line_raw in f:
-                line = line_raw.split("#",1)[0]
-                if line.strip() == "":
-                    continue
-                l = line.split()
-                url_lst.append(l[0])
-                if len(l) > 1:
-                    output_names.append(" ".join(l[1:]))
-                else:
-                    output_names.append(None)
+    data = parse_file(args.url, args.output, args.initial_offset, args.final_offset)
 
-    for url, output in zip(url_lst, output_names):
+    for url, output, io, fo in data:
         # Call youtube_dl
         file_name = download_audio(url, output)
 
-        if args.initial_offset or args.final_offset:
-            if args.final_offset:
+        if io or fo:
+            if fo:
                 audio_duration = get_audio_duration(url)
-                final_offset = compute_offset(audio_duration, args.final_offset)
+                final_offset = compute_offset(audio_duration, fo)
             else:
                 final_offset = "99999:00"
 
             # Call cutmp3 to cut the video
-            cut_audio(file_name, args.initial_offset, final_offset)
+            cut_audio(file_name, io, final_offset)
 
         if not output and not args.raw:
             file_name = clean_name(file_name)
