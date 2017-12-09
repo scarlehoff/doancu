@@ -108,7 +108,8 @@ if __name__ == "__main__":
         url_lst = []
         output_names = []
         with open(args.url) as f:
-            for line in f:
+            for line_raw in f:
+                line = line_raw.split("#",1)[0]
                 if line.strip() == "":
                     continue
                 l = line.split()
