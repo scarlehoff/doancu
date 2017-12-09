@@ -93,7 +93,7 @@ def clean_name(file_name):
     new_name = file_name.rsplit("-",1)[0]
     new_name_mp3 = new_name + ".mp3"
     cmd = ["mv", file_name, new_name_mp3]
-    cmd_call(cmd, verbose = True)
+    cmd_call(cmd, verbose = False)
     return new_name_mp3
 
 
