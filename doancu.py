@@ -36,7 +36,7 @@ def cmd_call(cmd_list, verbose = False, get_output = False):
         res = sp.run(cmd_list, stdout=output_pipe)
         if res.returncode != 0:
             print("Something went wrong tring to execute the following command: $?={0}".format(res.returncode))
-            print("~$ {0}".format(cmd_str))
+            print("~$ {0}".format(" ".join(cmd_list)))
             sys.exit(-1)
     except OSError as e:
         if e.errno == os.errno.ENOENT:
@@ -61,7 +61,7 @@ def download_audio(url, file_name = None):
     else:
         get_name = cmd + ["--get-filename"]
         file_name_raw = cmd_call(get_name, get_output = True)
-        file_name = file_name_raw.rsplit(".",-1)[0] + ".mp3"
+        file_name = file_name_raw.rsplit(".",1)[0] + ".mp3"
     cmd_call(cmd)
     return file_name
 
