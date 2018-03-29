@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" DOwnload ANd CUt video from youtube (or any youtube-dl supported source """
+""" DOwnload ANd CUt video from youtube (or any youtube-dl supported source) """
 
 import subprocess as sp
 import os
