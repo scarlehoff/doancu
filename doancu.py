@@ -3,7 +3,7 @@
 """ DOwnload ANd CUt video from youtube (or any youtube-dl supported source) """
 
 import subprocess as sp
-import os
+import errno
 import sys
 from datetime import datetime
 
@@ -39,8 +39,8 @@ def cmd_call(cmd_list, verbose = False, get_output = False):
             print("~$ {0}".format(" ".join(cmd_list)))
             sys.exit(-1)
     except OSError as e:
-        if e.errno == os.errno.ENOENT:
-            print("Program {0} not found".format(cmd_list[0]))
+        if e.errno == errno.ENOENT:
+            print("Program \"{0}\" was not found in the system. Please install in order to use this script".format(cmd_list[0]))
             sys.exit(-1)
         else:
             raise
