@@ -66,9 +66,13 @@ def download_audio(url, file_name = None):
     return file_name
 
 
-def cut_audio(file_name, begining, end = None):
+def cut_audio(file_name, beginning, end = None):
     temp_file = "temp_{0}".format(file_name)
-    cmd = ["cutmp3", "-q", "-i", file_name, "-a", begining, "-b", end, "-O", temp_file]
+    if not beginning:
+        beginning = "0:00"
+    if not end:
+        end = "999999:00"
+    cmd = ["cutmp3", "-q", "-i", file_name, "-a", beginning, "-b", end, "-O", temp_file]
     cmd_call(cmd, verbose=False)
     cmd = ["mv", temp_file, file_name]
     return cmd_call(cmd)
@@ -96,7 +100,7 @@ def clean_name(file_name):
     cmd_call(cmd, verbose = False)
     return new_name_mp3
 
-def parse_file(input_file, output, default_begining, default_end):
+def parse_file(input_file, output, default_beginning, default_end):
     url_lst = []
     output_lst = []
     io_lst = [] # initial_offsets
@@ -104,7 +108,7 @@ def parse_file(input_file, output, default_begining, default_end):
     if "http" in input_file:
         url_lst = [input_file]
         output_lst = [output]
-        io_lst = [default_begining]
+        io_lst = [default_beginning]
         fo_lst = [default_end]
     else:
         with open(args.url) as f:
@@ -113,7 +117,7 @@ def parse_file(input_file, output, default_begining, default_end):
                 line = line_raw.split("#",1)[0]
                 if line.strip() == "":
                     continue
-                # Are times included in the line? format: url, begining, ending, name
+                # Are times included in the line? format: url, beginning, ending, name
                 comma_format = line.split(",")
                 if len(comma_format) == 4:
                     url_lst.append(comma_format[0].strip())
@@ -125,7 +129,7 @@ def parse_file(input_file, output, default_begining, default_end):
                     url_lst.append(l[0].strip())
                     out_name = " ".join(l[1:])
                     output_lst.append(out_name.strip())
-                    io_lst.append(default_begining)
+                    io_lst.append(default_beginning)
                     fo_lst.append(default_end)
 
     return zip(url_lst, output_lst, io_lst, fo_lst)
