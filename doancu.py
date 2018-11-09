@@ -19,6 +19,7 @@ def parse_all_args():
     parser.add_argument("-o", "--output", help = "Output name. If unset, use whatever name comes from youtube")
 
     parser.add_argument("--raw", help = "Don't remove the -blabla youtube-dl writes if -o not given", action = "store_true")
+    parser.add_argument("--dry", help = "Skip the download of the video (ie, assume it is already there", action = "store_true")
 
     args = parser.parse_args()
 
@@ -50,7 +51,7 @@ def cmd_call(cmd_list, verbose = False, get_output = False):
     else:
         return res.returncode
 
-def download_audio(url, file_name = None):
+def download_audio(url, file_name = None, dry_run = False):
     cmd = ["youtube-dl", "--audio-format", "mp3", "--xattrs", "-x", url]
     if file_name:
         wild_card = ".%(ext)s"
@@ -62,7 +63,8 @@ def download_audio(url, file_name = None):
         get_name = cmd + ["--get-filename"]
         file_name_raw = cmd_call(get_name, get_output = True)
         file_name = file_name_raw.rsplit(".",1)[0] + ".mp3"
-    cmd_call(cmd)
+    if not dry_run:
+        cmd_call(cmd)
     return file_name
 
 
@@ -143,7 +145,7 @@ if __name__ == "__main__":
 
     for url, output, io, fo in data:
         # Call youtube_dl
-        file_name = download_audio(url, output)
+        file_name = download_audio(url, output, args.dry)
 
         if io or fo:
             if fo:
