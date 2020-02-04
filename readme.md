@@ -6,7 +6,7 @@ Very simple wrapper around youtube-dl and cutmp3 (basically, a bash script made 
 
 Usage:
 
-    ./doancu.py http://some_youtube_url -i 00:04 -f 00:20 -o filename.mp3
+    ./doancu.py http://some_youtube_url -b 00:04 -f 00:20 -o filename.mp3
 
 Will download whatever video is in the url into filename.mp3 and cut the 4 first seconds and the last 20.
 
@@ -17,5 +17,6 @@ eg:
 
     http://youtube.blabla Some other song
     http://youtube.blabla, 0:45, 0:12, Name # you can also specify the times like this
+
 
 

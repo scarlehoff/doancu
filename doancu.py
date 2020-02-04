@@ -19,7 +19,7 @@ def parse_all_args():
     parser.add_argument("-o", "--output", help = "Output name. If unset, use whatever name comes from youtube")
 
     parser.add_argument("--raw", help = "Don't remove the -blabla youtube-dl writes if -o not given", action = "store_true")
-    parser.add_argument("--dry", help = "Skip the download of the video (ie, assume it is already there", action = "store_true")
+    parser.add_argument("--dry", help = "Skip the download of the video (ie, assume it is already there)", action = "store_true")
 
     args = parser.parse_args()
 
