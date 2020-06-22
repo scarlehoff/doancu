@@ -4,28 +4,50 @@
 
 import subprocess as sp
 import errno
+import pydub
 import sys
 from datetime import datetime
 
+
 def parse_all_args():
     import argparse
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("url", help = "url we want to download")
+    parser.add_argument("url", help="url we want to download")
 
-    parser.add_argument("-b","--initial_offset", help = "Offset to cut at the beginning of the video in the format minutes:seconds")
-    parser.add_argument("-f","--final_offset", help = "Offset to cut at the end of the video")
+    parser.add_argument(
+        "-b",
+        "--initial_offset",
+        help="Offset to cut at the beginning of the video in the format minutes:seconds",
+    )
+    parser.add_argument(
+        "-f", "--final_offset", help="Offset to cut at the end of the video"
+    )
 
-    parser.add_argument("-o", "--output", help = "Output name. If unset, use whatever name comes from youtube")
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output name. If unset, use whatever name comes from youtube",
+    )
 
-    parser.add_argument("--raw", help = "Don't remove the -blabla youtube-dl writes if -o not given", action = "store_true")
-    parser.add_argument("--dry", help = "Skip the download of the video (ie, assume it is already there)", action = "store_true")
+    parser.add_argument(
+        "--raw",
+        help="Don't remove the -blabla youtube-dl writes if -o not given",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--dry",
+        help="Skip the download of the video (ie, assume it is already there)",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
     return args
 
-def cmd_call(cmd_list, verbose = False, get_output = False):
+
+def cmd_call(cmd_list, verbose=False, get_output=False):
     if verbose:
         print("Running: {0}".format(" ".join(cmd_list)))
         print("as: {0}".format(cmd_list))
@@ -36,22 +58,31 @@ def cmd_call(cmd_list, verbose = False, get_output = False):
     try:
         res = sp.run(cmd_list, stdout=output_pipe)
         if res.returncode != 0:
-            print("Something went wrong tring to execute the following command: $?={0}".format(res.returncode))
+            print(
+                "Something went wrong tring to execute the following command: $?={0}".format(
+                    res.returncode
+                )
+            )
             print("~$ {0}".format(" ".join(cmd_list)))
             sys.exit(-1)
     except OSError as e:
         if e.errno == errno.ENOENT:
-            print("Program \"{0}\" was not found in the system. Please install in order to use this script".format(cmd_list[0]))
+            print(
+                'Program "{0}" was not found in the system. Please install in order to use this script'.format(
+                    cmd_list[0]
+                )
+            )
             sys.exit(-1)
         else:
             raise
-    
+
     if get_output:
         return res.stdout.decode().strip()
     else:
         return res.returncode
 
-def download_audio(url, file_name = None, dry_run = False):
+
+def download_audio(url, file_name=None, dry_run=False):
     cmd = ["youtube-dl", "--audio-format", "mp3", "--xattrs", "-x", url]
     if file_name:
         wild_card = ".%(ext)s"
@@ -61,32 +92,54 @@ def download_audio(url, file_name = None, dry_run = False):
         cmd += ["-o", wild_name]
     else:
         get_name = cmd + ["--get-filename"]
-        file_name_raw = cmd_call(get_name, get_output = True)
-        file_name = file_name_raw.rsplit(".",1)[0] + ".mp3"
+        file_name_raw = cmd_call(get_name, get_output=True)
+        file_name = file_name_raw.rsplit(".", 1)[0] + ".mp3"
     if not dry_run:
         cmd_call(cmd)
     return file_name
 
+def parse_regular_time(time_str):
+    """ Parse a min:sec string into miliseconds 
+    can also accept min:sec.miliseconds
+    """
+    mstr, sstr = time_str.split(":")
+    mstr = int(mstr)*60*1000
+    try:
+        sstr = int(sstr)*1000
+    except ValueError:
+        sstr, milistr = sstr.split(".")
+        milistr = int(milistr)
+        sstr = int(sstr)*1000 + milistr
+    return mstr + sstr
 
-def cut_audio(file_name, beginning, end = None):
+
+def cut_audio(file_name, beginning, end=None):
     temp_file = "temp_{0}".format(file_name)
-    if not beginning:
-        beginning = "0:00"
-    if not end:
-        end = "999999:00"
-    cmd = ["cutmp3", "-q", "-i", file_name, "-a", beginning, "-b", end, "-O", temp_file]
-    cmd_call(cmd, verbose=False)
+    if beginning:
+        i_off = parse_regular_time(beginning)
+    else:
+        beginning = 0
+    if end:
+        f_off = parse_regular_time(end)
+    else:
+        f_off = None
+    # get the mp3
+    song = pydub.AudioSegment.from_mp3(file_name)
+    cut_song = song[i_off:f_off]
+    # export it out
+    cut_song.export(temp_file, format='mp3')
     cmd = ["mv", temp_file, file_name]
     return cmd_call(cmd)
 
 
-def get_audio_duration(url):
+def get_audio_duration(url): # unused
     cmd = ["youtube-dl", "--get-duration", url]
-    total_time = cmd_call(cmd, get_output = True)
+    total_time = cmd_call(cmd, get_output=True)
     return total_time
 
-def compute_offset(total_duration, final_offset = None):
-    format_time = "%M:%S" #.%f
+
+def compute_offset(total_duration, final_offset=None): # unused
+    format_time = "%M:%S"  # .%f
     total_time = datetime.strptime(total_duration, format_time)
     if not final_offset:
         final_offset = "00:00"
@@ -95,18 +148,20 @@ def compute_offset(total_duration, final_offset = None):
     # Why don't timedelta allow for a format string :( ?
     return ":".join(final_time.split(":")[-2:])
 
+
 def clean_name(file_name):
-    new_name = file_name.rsplit("-",1)[0]
+    new_name = file_name.rsplit("-", 1)[0]
     new_name_mp3 = new_name + ".mp3"
     cmd = ["mv", file_name, new_name_mp3]
-    cmd_call(cmd, verbose = False)
+    cmd_call(cmd, verbose=False)
     return new_name_mp3
+
 
 def parse_file(input_file, output, default_beginning, default_end):
     url_lst = []
     output_lst = []
-    io_lst = [] # initial_offsets
-    fo_lst = [] # final_offsets
+    io_lst = []  # initial_offsets
+    fo_lst = []  # final_offsets
     if "http" in input_file:
         url_lst = [input_file]
         output_lst = [output]
@@ -116,7 +171,7 @@ def parse_file(input_file, output, default_beginning, default_end):
         with open(args.url) as f:
             for line_raw in f:
                 # First remove comments and skip empty lines
-                line = line_raw.split("#",1)[0]
+                line = line_raw.split("#", 1)[0]
                 if line.strip() == "":
                     continue
                 # Are times included in the line? format: url, beginning, ending, name
@@ -148,14 +203,8 @@ if __name__ == "__main__":
         file_name = download_audio(url, output, args.dry)
 
         if io or fo:
-            if fo:
-                audio_duration = get_audio_duration(url)
-                final_offset = compute_offset(audio_duration, fo)
-            else:
-                final_offset = "99999:00"
-
-            # Call cutmp3 to cut the video
-            cut_audio(file_name, io, final_offset)
+            # Use pydub to cut the video
+            cut_audio(file_name, io, fo)
 
         if not output and not args.raw:
             file_name = clean_name(file_name)
