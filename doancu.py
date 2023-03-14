@@ -121,7 +121,7 @@ def cmd_call(cmd):
 
 def download_youtube(url, file_name=None, dry_run=False):
     """Wrapper around youtube_dl"""
-    cmd = ["youtube-dl", "--audio-format", "mp3", "--xattrs", "-x", url]
+    cmd = ["yt-dlp", "--audio-format", "mp3", "--xattrs", "-x", url]
     if file_name is not None:
         wild_card = ".%(ext)s"
         if ".mp3" not in file_name:
