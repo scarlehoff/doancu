@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-    DOwnload ANd CUt video from youtube (or any youtube-dl supported source)
+    DOwnload ANd CUt video from youtube (or any yt-dlp supported source)
+
+    Uses yt-dlp to download the video and subtitles from youtube
 """
 
 import logging
-import tempfile
-import sys
 import shutil
-from errno import ENOENT
 import subprocess as sp
-from pathlib import Path
+import sys
+import tempfile
 from argparse import ArgumentParser
+from errno import ENOENT
+from pathlib import Path
 
 from pydub import AudioSegment
 
@@ -23,7 +25,7 @@ def parse_all_args():
 
     parser = ArgumentParser()
 
-    parser.add_argument("url", help="URL to download from (or file with urls")
+    parser.add_argument("url", help="URL to download from (or file with list of urls)")
     parser.add_argument("-f", "--final_time", help="final time of the video at which to cut")
     parser.add_argument(
         "-b",
@@ -34,11 +36,6 @@ def parse_all_args():
         "-o",
         "--output",
         help="output name. if unset, use whatever name comes from youtube",
-    )
-    parser.add_argument(
-        "--raw",
-        help="don't remove the -blabla youtube-dl writes if -o not given",
-        action="store_true",
     )
     parser.add_argument(
         "--dry",
@@ -120,8 +117,18 @@ def cmd_call(cmd):
 
 
 def download_youtube(url, file_name=None, dry_run=False):
-    """Wrapper around youtube_dl"""
-    cmd = ["yt-dlp", "--audio-format", "mp3", "--xattrs", "-x", url]
+    """Wrapper around yt-dlp"""
+    cmd = [
+        "yt-dlp",
+        "--abort-on-unavailable-fragments",
+        "--audio-format",
+        "mp3",
+        "--embed-thumbnail",
+        "--embed-metadata",
+        "-x",
+        url,
+    ]
+    # cmd += ["--write-subs", "--sub-langs", "en", "--convert-subs", "lrc"]
     if file_name is not None:
         wild_card = ".%(ext)s"
         if ".mp3" not in file_name:
@@ -203,8 +210,3 @@ if __name__ == "__main__":
             logger.info("Cutting up the output")
             # Use pydub to cut the file
             cut_audio(file_name, initial=io, end=fo)
-
-        if not output and not args.raw:
-            # Clean a possible terrible name coming from youtube
-            new_name = file_name.as_posix().rsplit("-", 1)[0] + ".mp3"
-            shutil.move(file_name, new_name)
