@@ -16,6 +16,8 @@ from pathlib import Path
 
 from pydub import AudioSegment
 
+from parsesubs import vtt_to_lrc
+
 logging.basicConfig(level=logging.WARNING, format="[{levelname}] {message}", style="{")
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,19 @@ def parse_all_args():
         action="store_true",
     )
     parser.add_argument("-v", "--verbose", help="Make the output more verbose", action="store_true")
+    parser.add_argument(
+        "-s",
+        "--subtitles",
+        help="Download caption/subtitles and parses them to lrc, by default downloads the english lang",
+        nargs="*",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--list_subs",
+        help="List subs inmediately and exit after the first",
+        action="store_true",
+    )
 
     return parser.parse_args()
 
@@ -116,7 +131,7 @@ def cmd_call(cmd):
     return cmd_output
 
 
-def download_youtube(url, file_name=None, dry_run=False):
+def download_youtube(url, file_name=None, dry_run=False, subs=None):
     """Wrapper around yt-dlp"""
     cmd = [
         "yt-dlp",
@@ -128,7 +143,11 @@ def download_youtube(url, file_name=None, dry_run=False):
         "-x",
         url,
     ]
-    # cmd += ["--write-subs", "--sub-langs", "en", "--convert-subs", "lrc"]
+    lang = subs[0] if subs else "en"
+
+    if subs is not None:
+        cmd += ["--write-subs", "--sub-langs", lang]
+
     if file_name is not None:
         wild_card = ".%(ext)s"
         if ".mp3" not in file_name:
@@ -150,7 +169,9 @@ def download_youtube(url, file_name=None, dry_run=False):
             f"No failure was found, but the output path: {output_path} doesn't exist... maybe something went wrong"
         )
 
-    return output_path
+    subtitle_path = output_path.with_suffix(f".{lang}.vtt")
+
+    return output_path, subtitle_path
 
 
 def parse_regular_time(time_str):
@@ -203,8 +224,15 @@ if __name__ == "__main__":
     target_iterator = parse_input(args.url, args.output, args.initial_offset, args.final_time)
 
     for url, output, io, fo in target_iterator:
-        # First call youtube_dl
-        file_name = download_youtube(url, output, args.dry)
+        if args.list_subs:
+            sp.run(["yt-dlp", url, "--list-subs"])
+            sys.exit(0)
+
+        file_name, subs_path = download_youtube(url, output, args.dry, subs=args.subtitles)
+
+        if args.subtitles is not None:
+            subs_final = vtt_to_lrc(subs_path)
+            subs_path.unlink()
 
         if io or fo:
             logger.info("Cutting up the output")

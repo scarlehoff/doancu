@@ -1,7 +1,7 @@
-Very simple wrapper around youtube-dl and the python pbackage `pydub`.
+Very simple wrapper around yt-dlp and the python pbackage `pydub`.
 
-- Download video from youtube in the form of an audio file (using youtube-dl and ffmpeg)
-- Seeks information about video (basically, end-time, using youtube-dl as well (todo: get more precise results with mutagen))
+- Download video from youtube in the form of an audio file (using yt-dlp and ffmpeg)
+- Seeks information about video (basically, end-time, using yt-dlp as well (todo: get more precise results with mutagen))
 - Cuts the audio from some offset at the beginning to some offset from the end
 
 Usage:
