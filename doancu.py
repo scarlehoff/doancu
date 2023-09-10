@@ -143,9 +143,17 @@ def download_youtube(url, file_name=None, dry_run=False, subs=None):
         "-x",
         url,
     ]
-    lang = subs[0] if subs else "en"
 
+    # If subs is just an empty list, download "en"
+    lang = subs[0] if subs else "en"
     if subs is not None:
+        if len(subs) > 1:
+            raise ValueError("Not prepared to deal with two types of subtitles at once, sorry")
+
+        if lang.startswith("auto"):
+            cmd.append("--write-auto-subs")
+            lang = lang.replace("auto-", "")
+
         cmd += ["--write-subs", "--sub-langs", lang]
 
     if file_name is not None:
